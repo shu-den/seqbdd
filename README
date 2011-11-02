@@ -1,0 +1,266 @@
+/*
+ * @(#)seqbdd.erl
+ *
+ * Copyright 2011, Shuhei Denzumi, all rights reserved.
+ *
+ * This file contains an implementation of the data structure "SeqBDD" and its algorithms.
+ *
+ * This software may be used freely for any purpose. However, when distributed,
+ * the original source must be clearly stated, and, when the source code is
+ * distributed, the copiright notice must be retained and any alterations in
+ * the code must be clearly marked. No warranty is given regarding the quality
+ * of this software.
+ */
+
+
+/**
+ * seqbdd.erl
+ *
+ *
+ * Created: Tue Oct 25 16:15:00 2011
+ *
+ * @author <a href="mailto:denzumi@ist.hokudai.ac.jp">Shuhei Denzumi</a>
+ * @version $Revision: 1.0 $
+ * @see <a href="http://www-alg.ist.hokudai.ac.jp/~thomas/TCSTR/tcstr_10_53/tcstr_10_53.pdf">
+ * Efficient Algorithms on Sequence Binary Decision Diagrams for Manipulating Sets of Strings (PDF)</a>
+ */
+ 
+
+                        SEQBDD TINY USAGE EXAMPLES
+
+                                            Time-stamp: <2011-10-24 16:15:15 s-f>
+
+COPYRIGHT
+
+    Copyright 2011, Shuhei Denzumi, all rights reserved.
+
+    This software may be used freely for any purpose. However, when distributed,
+    the original source must be clearly stated, and, when the source code is
+    distributed, the copiright notice must be retained and any alterations in
+    the code must be clearly marked. No warranty is given regarding the quality
+    of this software.
+    
+EXAMPLE
+
+A SeqBDD node is represented by an interger as node ID.
+
+Erlang R14B02 (erts-5.8.3) [smp:2:2] [rq:2] [async-threads:0]
+
+Eshell V5.8.3  (abort with ^G)
+1> cd("h:update").
+H:/update
+ok
+2> seqbdd:set(). %Set ETS for SeqBDD
+ok
+3> seqbdd:build("01101001"). %Construct a SeqBDD for a string
+9
+4> seqbdd:count(9). %Number of nodes reachable from a root
+10
+5> seqbdd:psdd(9). %Construct a SeqBDD for all prefixes of an input SeqBDD
+17
+6> seqbdd:print(17).
+01101001
+0110100
+011010
+01101
+0110
+011
+01
+0
+
+ok
+7> seqbdd:ssdd(9). %Construct a SeqBDD for all suffixes of an input SeqBDD
+38
+8> seqbdd:print(38).
+001
+01001
+01101001
+01
+1001
+101001
+1101001
+1
+
+ok
+9> seqbdd:fsdd(9).  %Construct a SeqBDD for all factors of an input SeqBDD
+60
+10> seqbdd:print(60).
+001
+00
+01001
+0100
+010
+01101001
+0110100
+011010
+01101
+0110
+011
+01
+0
+1001
+100
+101001
+10100
+1010
+101
+10
+1101001
+110100
+11010
+1101
+110
+11
+1
+
+ok
+11> seqbdd:multi_build(["0","01","010","01001","01001010"]). %Construct a SeqBDD for strings in a list
+81
+12> seqbdd:multi_build_once(["1","10","101","10110","10110101"]).
+87
+13> seqbdd:count(81).
+10
+14> seqbdd:count(87).
+10
+15> seqbdd:multi_count([81,87]). %Number of nodes reachable from roots in a list
+18
+16> seqbdd:fsdd(81).
+110
+17> seqbdd:fsdd(87).
+133
+18> seqbdd:union(81,87). %Set union operation
+134
+19> seqbdd:intersect(81,87). %Set intersection operation
+0
+20> seqbdd:union(110,133).
+141
+21> seqbdd:intersect(110,133).
+142
+22> seqbdd:minus(110,133). %Set difference operation
+149
+23> seqbdd:minus(133,110). 
+155
+24> seqbdd:print(142).
+0101
+010
+01
+0
+1010
+101
+10
+1
+
+ok
+25> seqbdd:print(seqbdd:longer(142,2)).
+0101
+010
+01
+1010
+101
+10
+ok
+26> seqbdd:print(seqbdd:shorter(142,2)).
+01
+0
+10
+1
+
+ok
+27> seqbdd:print(seqbdd:just(142,2)).   
+01
+10
+ok
+28> seqbdd:decompress(142). %SeqBDD to list of strings
+["0101","010","01","0","1010","101","10","1",[]]
+29> seqbdd:random(142). %Random select of a string from a SeqBDD
+"0101"
+30> seqbdd:random(142).
+"0"
+31> seqbdd:random(142).
+"10"
+32> seqbdd:random(142).
+[]
+33> seqbdd:shallowness(142). %Length of the shortest string
+0
+34> seqbdd:depth(142). %Length of the longest string
+4
+35> seqbdd:shortest(142). %Shortest strings
+[]
+36> seqbdd:longest(142). %Longest strings
+["0101","1010"]
+37> seqbdd:clean([142]). %Remove all nodes in ETS except for the reachable nodes from roots in a list
+ok
+38> seqbdd:path(142). %Size of a set represented by SeqBDD
+9
+39> seqbdd:search(142, "01"). %Check a SeqBDD contain an input string
+true
+40> seqbdd:search(142, "10").
+true
+41> seqbdd:search(142, "00").
+false
+42> seqbdd:search(142, "11").
+false
+43> seqbdd:save(142). %Make a SeqBDD not removed
+ok
+44> seqbdd:clean([]).
+ok
+45> seqbdd:character(142). %Total length of strings in a SeqBDD
+20
+46> seqbdd:product(142,142). %Cartesian product operation
+179
+47> seqbdd:print(179).
+00101
+0010
+001
+00
+0100101
+010010
+01001
+0100
+01010101
+0101010
+010101
+01010
+01011010
+0101101
+010110
+01011
+0101
+010
+011010
+01101
+0110
+011
+01
+0
+100101
+10010
+1001
+100
+10100101
+1010010
+101001
+10100
+10101010
+1010101
+101010
+10101
+1010
+1011010
+101101
+10110
+1011
+101
+10
+11010
+1101
+110
+11
+1
+
+ok
+48> seqbdd:delete(). %Delete ETS for SeqBDD
+ok
+49> seqbdd:reset(). %Delete and set ETS for SeqBDD again
+ok
+
