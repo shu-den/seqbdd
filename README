@@ -21,8 +21,10 @@
  *
  * @author <a href="mailto:denzumi@ist.hokudai.ac.jp">Shuhei Denzumi</a>
  * @version $Revision: 1.0 $
- * @see <a href="http://www-alg.ist.hokudai.ac.jp/~thomas/TCSTR/tcstr_10_53/tcstr_10_53.pdf">
+ * @see <a href="http://www-alg.ist.hokudai.ac.jp/~thomas/TCSTR/tcstr_11_53/tcstr_11_53.pdf">
  * Efficient Algorithms on Sequence Binary Decision Diagrams for Manipulating Sets of Strings (PDF)</a>
+ * @see also <a href="http://www.stringology.org/event/2011/p13.html">
+ * Notes on Sequence Binary Decision Diagrams: Relationship to Acyclic Automata and Complexities of Binary Set Operations</a>
  */
  
 
